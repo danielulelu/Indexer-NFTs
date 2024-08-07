@@ -11,8 +11,9 @@ import {
     Container
   } from '@chakra-ui/react';
   import { Alchemy, Network, Utils } from 'alchemy-sdk';
-  import { useState } from 'react';
+  import { useState, useCallback } from 'react';
   import TokenCard from './TokenCard.jsx';
+  import Loader from './Loader.jsx';
 
   const Header = () => {
     const [userAddress, setUserAddress] = useState('');
@@ -20,6 +21,22 @@ import {
     const [hasQueried, setHasQueried] = useState(false);
     const [tokenDataObjects, setTokenDataObjects] = useState([]);
     const [loading, setLoading] = useState(false);
+
+    const debounce = (func, delay) => {
+      let timer;
+      return function(...args) {
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => {
+          timer = null;
+          func.apply(context, args);
+        }, delay);
+      };
+    };
+
+    const handleInputChange = useCallback(
+      debounce((value) => setUserAddress(value), 500),
+      []
+    );
 
     async function getTokenBalance() {
       setLoading(true); // Set loading to true when fetching starts
@@ -76,7 +93,7 @@ import {
           Get all the ERC-20 token balances of this address:
         </Heading>
         <Input
-          onChange={(e) => setUserAddress(e.target.value)}
+          onChange={(e) => handleInputChange(e.target.value)}
           color="black"
           w="600px"
           textAlign="center"
@@ -88,8 +105,10 @@ import {
           Check ERC-20 Token Balances
         </Button>
 
-        {hasQueried ? (
-          <SimpleGrid w={'120vh'} marginLeft={20} columns={[ 2, null, 3]} spacing='20px'>
+        {loading ? ( // Display the Loader if data is being fetched
+          <Loader />
+        ) : hasQueried ? (
+          <SimpleGrid w={'90vw'} columns={4} spacing={24}>
             {results.tokenBalances.map((e, i) => (
               <TokenCard
                 key={i}
