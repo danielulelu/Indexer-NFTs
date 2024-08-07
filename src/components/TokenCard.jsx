@@ -7,7 +7,7 @@ const TokenCard = ({ tokenData, tokenBalance }) => {
 
     return ( 
         <Card direction={{ base: 'column', sm: 'row' }}
-         overflow='hidden' variant='outline' bg='gray' color='white' 
+         overflow='hidden' variant='outline' bg='teal' color='white' 
          borderRadius='lg' padding={4} margin={4} w={{ base: '90vw', md: '45vw', lg: '30vw' }}>
             <Stack>
                 <CardBody>
