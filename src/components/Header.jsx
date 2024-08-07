@@ -10,25 +10,29 @@ import {
     Text,
     Container
   } from '@chakra-ui/react';
-  import { Alchemy, Network, Utils } from 'alchemy-sdk';
+  import { Alchemy, Network } from 'alchemy-sdk';
   import { useState, useCallback } from 'react';
   import TokenCard from './TokenCard.jsx';
   import Loader from './Loader.jsx';
+  import { ethers } from 'ethers';
 
   const Header = () => {
+    const [inputValue, setInputValue] = useState(''); // Track input value
+    const [resolvedAddress, setResolvedAddress] = useState(''); // Track resolved Ethereum address
     const [userAddress, setUserAddress] = useState('');
     const [results, setResults] = useState([]);
     const [hasQueried, setHasQueried] = useState(false);
     const [tokenDataObjects, setTokenDataObjects] = useState([]);
     const [loading, setLoading] = useState(false);
+    const [walletConnected, setWalletConnected] = useState(false);
 
     const debounce = (func, delay) => {
       let timer;
-      return function(...args) {
+      return function (...args) {
         if (timer) clearTimeout(timer);
         timer = setTimeout(() => {
           timer = null;
-          func.apply(context, args);
+          func.apply(this, args);
         }, delay);
       };
     };
@@ -38,7 +42,45 @@ import {
       []
     );
 
-    async function getTokenBalance() {
+    async function connectWallet() {
+      if (window.ethereum) {
+        try {
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          await provider.send('eth_requestAccounts', []);
+          const signer = provider.getSigner();
+          const address = await signer.getAddress();
+          setUserAddress(address);
+          setWalletConnected(true);
+          console.log('connected to wallet:', address);
+        } catch (error) {
+          console.error('Error connecting to MetaMask:', error);
+        }
+      }
+    }
+
+
+    // resolving ENS address
+    async function resolveENSaddress(input) {
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+
+        if (ethers.utils.isAddress(input)) {
+          return input;
+        }
+
+        // otherwise try to resolve ENS
+        const address = await provider.resolveName(input);
+        if (!address) {
+          throw new Error("Unable to resolve ENS address");
+        }
+        return address;
+      } catch (error) {
+        console.error("Error resolving ENS or address:", error);
+        return null;
+      }
+    }
+      
+      async function getTokenBalance() {
       setLoading(true); // Set loading to true when fetching starts
       try {
         const config = {
@@ -63,6 +105,7 @@ import {
         setLoading(false); 
       }
     }
+
 
     return (  
       <Container maxW="2xl" mx="auto">
