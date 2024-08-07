@@ -19,33 +19,36 @@ import {
     const [results, setResults] = useState([]);
     const [hasQueried, setHasQueried] = useState(false);
     const [tokenDataObjects, setTokenDataObjects] = useState([]);
+    const [loading, setLoading] = useState(false);
 
     async function getTokenBalance() {
+      setLoading(true); // Set loading to true when fetching starts
+      try {
         const config = {
           apiKey: 'GAEQaGaMDEe2maX6xFAT_FhSAvndMG8B',
           network: Network.ETH_MAINNET,
         };
-    
+  
         const alchemy = new Alchemy(config);
         const data = await alchemy.core.getTokenBalances(userAddress);
-    
+  
         setResults(data);
-    
-        const tokenDataPromises = [];
-    
-        for (let i = 0; i < data.tokenBalances.length; i++) {
-          const tokenData = alchemy.core.getTokenMetadata(
-            data.tokenBalances[i].contractAddress
-          );
-          tokenDataPromises.push(tokenData);
-        }
-    
+  
+        const tokenDataPromises = data.tokenBalances.map((balance) =>
+          alchemy.core.getTokenMetadata(balance.contractAddress)
+        );
+  
         setTokenDataObjects(await Promise.all(tokenDataPromises));
         setHasQueried(true);
+      } catch (error) {
+        console.error("Error fetching token balances:", error);
+      } finally {
+        setLoading(false); 
       }
+    }
 
     return (  
-      <Container maxW="2xl" mx="auto" centerContent>
+      <Container maxW="2xl" mx="auto">
         <Box w="100vw">
 
       <Center>
@@ -103,5 +106,4 @@ import {
     </Container>
   );
   }
-   
   export default Header;
